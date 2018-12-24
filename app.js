@@ -5,10 +5,10 @@ var bodyParser = require("body-parser");
 
 var rutas_principal = require("./routes/app");
 var rutas_usuario = require("./routes/usuario");
+var ruta_login = require("./routes/login");
 
 //inicializacion de variables
 var app = express();
-
 
 //BODY PARSER
 
@@ -17,13 +17,11 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // parse application/json
 app.use(bodyParser.json());
 
-
-
 //RUTAS IMPORTACION
 
 app.use("/", rutas_principal);
 app.use("/usuario", rutas_usuario);
-
+app.use("/login", ruta_login);
 
 //CONEXION A LA BASE DE DATOS
 mongoose
