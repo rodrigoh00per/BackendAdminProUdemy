@@ -1,9 +1,29 @@
 //REQUIRES
 const express = require("express");
 var mongoose = require("mongoose");
+var bodyParser = require("body-parser");
+
+var rutas_principal = require("./routes/app");
+var rutas_usuario = require("./routes/usuario");
 
 //inicializacion de variables
 var app = express();
+
+
+//BODY PARSER
+
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: false }));
+// parse application/json
+app.use(bodyParser.json());
+
+
+
+//RUTAS IMPORTACION
+
+app.use("/", rutas_principal);
+app.use("/usuario", rutas_usuario);
+
 
 //CONEXION A LA BASE DE DATOS
 mongoose
@@ -14,14 +34,6 @@ mongoose
   .catch(() => {
     console.log("Hay un problema al levantar la BD");
   });
-
-//RUTAS
-
-app.get("/", (req, res, next) => {
-  res
-    .status(200)
-    .json({ ok: true, mensaje: "Peticion realizada correctamente" });
-});
 
 //Escuchar peticiones
 
