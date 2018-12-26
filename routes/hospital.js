@@ -1,73 +1,71 @@
 var express = require("express");
-var bcrypt = require("bcryptjs");
+
 var middlewareAuth = require("../middlewares/auntenticacion");
 
 var routes = express.Router();
 
-//IMPORTAMOS EL MODELO DE USUARIO
-var Usuario = require("../models/usuario");
+//IMPORTAMOS EL MODELO DE HOSPITAL
+var Hospital = require("../models/hospital");
 
 /* 
 =================================================================
-==============RUTA GET QUE REGRESA TODOS LOS USUARIOS============
+==============RUTA GET QUE REGRESA TODOS LOS HOSPITALES============
 */
 routes.get("/", (req, res, next) => {
   var desde = req.query.desde || 0;
   desde = Number(desde);
 
-  Usuario.find({}, "nombre email img role")
+  Hospital.find({})
     .skip(desde) //con el skip le digo saltate por ejemplo los primeros 4
     .limit(5)
-    .exec((err, usuarios) => {
+    .populate("usuario", "nombre email")
+    .exec((err, hospitales) => {
       if (err) {
         return res.status(500).json({
           ok: false,
-          mensaje: "Error cargando usuarios",
+          mensaje: "Error cargando hospitales",
           errors: err
         });
       }
-
-      Usuario.count({}, (err, conteo) => {
+      Hospital.count({}, (err, conteo) => {
         return res
           .status(200)
-          .json({ ok: true, usuarios: usuarios, total: conteo });
+          .json({ ok: true, hospitales: hospitales, total: conteo });
       });
     });
 });
 
 /* 
 =================================================================
-==============RUTA POST PARA CREAR UN NUEVO USUARIO============
+==============RUTA POST PARA CREAR UN NUEVO HOSPITAL============
 =================================================================
 */
 
 routes.post("/", middlewareAuth.verificaToken, (req, res) => {
+  console.log(req.usuario_creador);
+
   let body = req.body;
 
-  let usuario = new Usuario({
+  let hospital = new Hospital({
     nombre: body.nombre,
-    email: body.email,
-    password: bcrypt.hashSync(body.password, 10),
-    img: body.img,
-    role: body.role
+    usuario: req.usuario_creador._id
   });
-  usuario.save((err, usuarioGuardado) => {
+  hospital.save((err, hospitalGuardado) => {
     if (err) {
       return res.status(400).json({
         ok: false,
-        mensaje: "Error al crear el usuario",
+        mensaje: "Error al crear el hospital",
         errors: err
       });
     }
     return res.status(201).json({
       ok: true,
-      usuario: usuarioGuardado,
-      tokenusuario: req.usuario_creador
+      hospital: hospitalGuardado
     });
   });
 });
 /* ================================================================
-==============RUTA PUT PARA ACTUALIZAR UN USUARIO EXISTENTE============
+==============RUTA PUT PARA ACTUALIZAR UN HOSPITAL EXISTENTE============
 =================================================================
  */
 
@@ -75,63 +73,63 @@ routes.put("/:id", middlewareAuth.verificaToken, (req, res) => {
   let id = req.params.id;
   let body = req.body;
 
-  Usuario.findById(id, (err, usuario) => {
+  Hospital.findById(id, (err, hospital) => {
     if (err) {
       return res.status(500).json({
         ok: false,
-        mensaje: "Error al buscar  usuario",
+        mensaje: "Error al buscar hospital",
         errors: err
       });
     }
-    if (!usuario) {
+    if (!hospital) {
       return res.status(400).json({
         ok: false,
-        mensaje: "El usuario con el id:" + id + "no existe",
-        errors: { message: "no existe un usuario con ese ID" }
+        mensaje: "El hospital con el id:" + id + "no existe",
+        errors: { message: "no existe un hospital con ese ID" }
       });
     }
-    usuario.nombre = body.nombre;
-    usuario.email = body.email;
-    usuario.role = body.role;
+    hospital.nombre = body.nombre;
 
-    usuario.save((err, usuarioActualizado) => {
+    hospital.usuario = req.usuario_creador._id;
+
+    hospital.save((err, hospitalActualizado) => {
       if (err) {
         return res.status(400).json({
           //PUEDE QUE NO ESTE MANDADO EL CORREO VACIO O COSAS ASI
           ok: false,
-          mensaje: "Error al actualizar el usuario",
+          mensaje: "Error al actualizar el hopsital",
           errors: err
         });
       }
-      usuarioActualizado.password = ":D";
-      return res.status(200).json({ ok: true, usuario: usuarioActualizado });
+
+      return res.status(200).json({ ok: true, hospital: hospitalActualizado });
     });
   });
 });
 
 /* ================================================================
-==============RUTA DELETE PARA ELIMINAR UN USUARIO EXISTENTE============
+==============RUTA DELETE PARA ELIMINAR UN HOSPITAL EXISTENTE============
 =================================================================
  */
 routes.delete("/:id", middlewareAuth.verificaToken, (req, res) => {
   var id = req.params.id;
 
-  Usuario.findByIdAndDelete(id, (err, usuarioEliminado) => {
+  Hospital.findByIdAndDelete(id, (err, hospitalEliminado) => {
     if (err) {
       return res.status(500).json({
         ok: false,
-        mensaje: "Error al eliminar el usuario",
+        mensaje: "Error al eliminar el hospital",
         errors: err
       });
     }
-    if (!usuarioEliminado) {
+    if (!hospitalEliminado) {
       return res.status(400).json({
         ok: false,
-        mensaje: "No existe un usuario con ese Id",
-        errors: { message: "No existe un usuario con ese id" }
+        mensaje: "No existe un hospital con ese Id",
+        errors: { message: "No existe un hospital con ese id" }
       });
     }
-    return res.status(200).json({ ok: true, usuario: usuarioEliminado });
+    return res.status(200).json({ ok: true, hospital: hospitalEliminado });
   });
 });
 
