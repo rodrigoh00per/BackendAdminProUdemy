@@ -26,7 +26,8 @@ var usuarioSchema = new Schema({
     required: true,
     default: "USER_ROLE",
     enum: rolesValidos
-  }
+  },
+  google: { type: Boolean, default: false }
 }); //aqui se pone la configuracion del esquema que nosotros vamos a definir
 
 usuarioSchema.plugin(uniqueValidator, {
